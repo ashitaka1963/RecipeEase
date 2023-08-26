@@ -1,0 +1,24 @@
+/* icon button */
+
+.main-icon-button {
+  border-color: #ff8e3c !important;
+  color: #ff6a00 !important;
+  --el-button-hover-bg-color: #f7ece7 !important;
+}
+
+.sub-icon-button {
+  border-color: #3daeff !important;
+  color: #0095ff !important;
+}
+
+.normal-icon-button {
+  border-color: #6a6c70 !important;
+  color: #6a6c70 !important;
+  --el-button-hover-bg-color: #edf1fa !important;
+}
+
+/* button */
+.main-button {
+  --el-button-text-color: var(--el-color-white) !important;
+  --el-button-hover-text-color: var(--el-color-white) !important;
+}
