@@ -38,7 +38,8 @@ export const useIngredientsStore = defineStore('ingredients', {
         })
         .catch((error: any) => {
           console.error('Error:', error);
-          showMessage('材料の登録に失敗しました。', 'error');
+          // showMessage('材料の登録に失敗しました。', 'error');
+          showMessage(error.response.data.error, 'error');
         });
     },
     async editIngredient(editItem: any) {

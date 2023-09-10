@@ -1,14 +1,226 @@
 <script setup lang="ts">
-import PageHeader from '../components/parts/PageHeader.vue';
+// TODO:新規登録後、formの値が残る
+// TODO:https://element-plus.org/en-US/component/upload.html#photo-wall
+
+import { ref, reactive, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { Search, Delete, Edit } from '@element-plus/icons-vue';
-import { ref } from 'vue';
+import type { FormInstance, FormRules } from 'element-plus';
 
-import recipeList from '../temp/recipe-list.json';
+import { useRecipesStore } from '@/stores/recipes';
 
-const tempDate = recipeList;
+import PageHeader from '../components/parts/PageHeader.vue';
+import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
+import loadingUtils from '../CustomLoading';
 
-const ingredient = ref(tempDate);
+const router = useRouter();
+const recipesStore = useRecipesStore();
+
+const ruleFormRef = ref<FormInstance>();
+const isDialogVisible = ref(false);
+const isConfirmDialogVisible = ref(false);
+const deleteRecipeId = ref('');
+const deleteRecipeName = ref('');
+const isEdit = ref(true);
+
+const typeOptions = [
+  {
+    value: '主菜',
+    label: '主菜'
+  },
+  {
+    value: '副菜',
+    label: '副菜'
+  },
+  {
+    value: '汁物',
+    label: '汁物'
+  }
+];
+
+const genreOptions = [
+  {
+    value: 'パスタ',
+    label: 'パスタ'
+  },
+  {
+    value: 'xx',
+    label: 'xx'
+  },
+  {
+    value: 'yy',
+    label: 'yy'
+  }
+];
+
+const levelOptions = [
+  {
+    value: '低',
+    label: '低'
+  },
+  {
+    value: '中',
+    label: '中'
+  },
+  {
+    value: '高',
+    label: '高'
+  }
+];
+
+interface Recipe {
+  _id: string | null;
+  name: String;
+  type: String;
+  genre: String;
+  level: String;
+}
+
+const form = reactive<Recipe>({
+  _id: null,
+  name: '',
+  type: typeOptions[0].value,
+  genre: genreOptions[0].value,
+  level: levelOptions[0].value
+});
+
+const defaultForm: Recipe = {
+  _id: null,
+  name: '',
+  type: typeOptions[0].value,
+  genre: genreOptions[0].value,
+  level: levelOptions[1].value
+};
+
+const rules = reactive<FormRules<Recipe>>({
+  name: [
+    { required: true, message: '食材名を入力してください。', trigger: 'blur' },
+    { min: 1, max: 30, message: '15文字以内で入力してください。', trigger: 'blur' }
+  ],
+  type: [
+    {
+      required: true,
+      message: 'カテゴリーを選択してください。',
+      trigger: 'blur'
+    }
+  ],
+  genre: [
+    {
+      required: true,
+      message: 'カテゴリーを選択してください。',
+      trigger: 'blur'
+    }
+  ],
+  level: [
+    {
+      required: true,
+      message: 'カテゴリーを選択してください。',
+      trigger: 'blur'
+    }
+  ]
+});
+
+init();
+
+// ========================================
+// Computed
+// ========================================
+
+const dialogTitle = computed((): any => {
+  return isEdit.value ? '編集' : '新規追加';
+});
+
+const dialogButtonName = computed((): any => {
+  return isEdit.value ? '更新' : '追加';
+});
+
+// ========================================
+// Methods
+// ========================================
+function goToAccountView(recipeId: string) {
+  router.push({ name: 'RecipeDetailView', params: { id: recipeId } });
+}
+
+async function init() {
+  loadingUtils.startLoading();
+
+  await getRecipes();
+
+  loadingUtils.closeLoading();
+}
+
+function getRecipes() {
+  recipesStore.fetchRecipes();
+}
+
+function editDialogOpen(recipeId: string) {
+  isDialogVisible.value = true;
+  isEdit.value = true;
+
+  Object.assign(form, recipesStore.getById(recipeId));
+}
+
+async function deleteRecipe(recipeId: string) {
+  loadingUtils.startLoading();
+
+  await recipesStore.deleteRecipe(recipeId);
+
+  loadingUtils.closeLoading();
+}
+
+async function saveRecipe() {
+  loadingUtils.startLoading();
+
+  if (isEdit.value) {
+    await recipesStore.editRecipe({ ...form });
+  } else {
+    await recipesStore.addRecipe({ ...form });
+  }
+  isDialogVisible.value = false;
+  loadingUtils.closeLoading();
+}
+
+async function submitForm() {
+  const formEl = ruleFormRef.value;
+
+  console.log(formEl);
+  if (!formEl) return;
+
+  await formEl.validate((valid, fields) => {
+    if (valid) {
+      saveRecipe();
+    } else {
+      console.log('error submit!', fields);
+    }
+  });
+}
+
+function cancelForm() {
+  const formEl = ruleFormRef.value;
+  if (!formEl) return;
+
+  formEl.resetFields();
+
+  Object.assign(form, defaultForm);
+  isDialogVisible.value = false;
+}
+
+function onConfirmButtonClick() {
+  deleteRecipe(deleteRecipeId.value);
+  onCancelButtonClick();
+}
+
+function onCancelButtonClick() {
+  isConfirmDialogVisible.value = false;
+  deleteRecipeName.value = '';
+  deleteRecipeId.value = '';
+}
+
+// //TODO:削除
+// import recipeList from '../temp/recipe-list.json';
+// const tempDate = recipeList;
+// const recipe = ref(tempDate);
 </script>
 
 <template>
@@ -17,7 +229,7 @@ const ingredient = ref(tempDate);
     <div class="container">
       <el-row>
         <el-col :span="24">
-          <el-table :data="ingredient" style="width: 100%">
+          <el-table :data="recipesStore.recipes" style="width: 100%">
             <el-table-column prop="name" label="レシピ名" />
             <el-table-column prop="type" label="タイプ">
               <template #default="scope">
@@ -36,17 +248,103 @@ const ingredient = ref(tempDate);
             </el-table-column>
             <el-table-column width="160">
               <template #header>
-                <el-button color="#ff8e3c">レシピを追加</el-button>
+                <el-button
+                  class="main-button"
+                  color="#ff8e3c"
+                  @click="
+                    isDialogVisible = true;
+                    isEdit = false;
+                  "
+                  >レシピを追加</el-button
+                >
               </template>
               <template #default="scope">
-                <el-button class="normal-icon-button" :icon="Search" circle></el-button>
-                <el-button class="main-icon-button" :icon="Edit" circle></el-button>
-                <el-button class="sub-icon-button" :icon="Delete" circle></el-button>
+                <el-button
+                  class="normal-icon-button"
+                  @click="goToAccountView(scope.row._id)"
+                  :icon="Search"
+                  circle
+                ></el-button>
+                <el-button
+                  class="main-icon-button"
+                  @click="editDialogOpen(scope.row._id)"
+                  :icon="Edit"
+                  circle
+                ></el-button>
+                <el-button
+                  class="sub-icon-button"
+                  @click="
+                    isConfirmDialogVisible = true;
+                    deleteRecipeId = scope.row._id;
+                    deleteRecipeName = scope.row.name;
+                  "
+                  :icon="Delete"
+                  circle
+                ></el-button>
               </template>
             </el-table-column>
           </el-table>
         </el-col>
       </el-row>
     </div>
+
+    <!-- dialog -->
+    <el-dialog
+      v-model="isDialogVisible"
+      :title="dialogTitle"
+      width="30%"
+      align-center
+      :before-close="cancelForm"
+    >
+      <el-form ref="ruleFormRef" :model="form" :rules="rules" label-width="80px" status-icon>
+        <el-form-item label="名前" prop="name">
+          <el-input v-model="form.name" />
+        </el-form-item>
+
+        <el-form-item label="タイプ" prop="type">
+          <el-select v-model="form.type" placeholder="Select">
+            <el-option
+              v-for="item in typeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="ジャンル" prop="genre">
+          <el-select v-model="form.genre" placeholder="Select">
+            <el-option
+              v-for="item in genreOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="難易度" prop="level">
+          <el-select v-model="form.level" placeholder="Select">
+            <el-option
+              v-for="item in levelOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button class="main-button" color="#ff8e3c" @click="submitForm">{{
+            dialogButtonName
+          }}</el-button>
+          <el-button type="info" @click="cancelForm">中止</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+
+    <ConfirmDialog
+      :isDialogVisible="isConfirmDialogVisible"
+      :message="`レシピ(${deleteRecipeName})を削除しますか？`"
+      @clickConfirmed="onConfirmButtonClick"
+      @clickCanceled="onCancelButtonClick"
+    />
   </main>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router';
 
-const router = useRouter()
+const router = useRouter();
 
 // defineProps<{
 //   headerName: string
@@ -17,11 +17,11 @@ const props = defineProps({
     type: Boolean,
     default: true
   }
-})
+});
 
 const goBack = () => {
-  router.go(-1)
-}
+  router.go(-1);
+};
 </script>
 
 <template>
@@ -48,6 +48,6 @@ const goBack = () => {
 
 span {
   font-size: 24px;
-  color: ##0d0d0d;
+  color: '#0d0d0d';
 }
 </style>

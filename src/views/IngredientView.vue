@@ -23,18 +23,21 @@ interface Ingredient {
   _id: string | null;
   name: string;
   category: string;
+  unit: string;
 }
 
 const form = reactive<Ingredient>({
   _id: null,
   name: '',
-  category: ''
+  category: '',
+  unit: ''
 });
 
 const defaultForm: Ingredient = {
   _id: null,
   name: '',
-  category: ''
+  category: '',
+  unit: ''
 };
 
 const rules = reactive<FormRules<Ingredient>>({
@@ -71,6 +74,10 @@ const categoryOptions = [
   {
     value: '果物',
     label: '果物'
+  },
+  {
+    value: '調味料',
+    label: '調味料'
   }
 ];
 
@@ -180,6 +187,7 @@ function onCancelButtonClick() {
                 <el-tag class="ml-2" type="info">{{ scope.row.category }}</el-tag>
               </template>
             </el-table-column>
+            <el-table-column prop="unit" label="単位" />
             <el-table-column width="130">
               <template #header>
                 <el-button
@@ -230,7 +238,7 @@ function onCancelButtonClick() {
         </el-form-item>
 
         <el-form-item label="カテゴリ" prop="category">
-          <el-select v-model="form.category" placeholder="Select">
+          <el-select v-model="form.category" placeholder="Select" @change="form.unit = ''">
             <el-option
               v-for="item in categoryOptions"
               :key="item.value"
@@ -239,6 +247,11 @@ function onCancelButtonClick() {
             />
           </el-select>
         </el-form-item>
+        <template v-if="form.category !== '調味料'">
+          <el-form-item label="単位" prop="unit">
+            <el-input v-model="form.unit" />
+          </el-form-item>
+        </template>
         <el-form-item>
           <el-button class="main-button" color="#ff8e3c" @click="submitForm">{{
             dialogButtonName

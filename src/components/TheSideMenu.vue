@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router';
 
 import {
   Menu as IconMenu,
@@ -8,22 +8,24 @@ import {
   Apple,
   ShoppingCart,
   Calendar,
-  ForkSpoon
-} from '@element-plus/icons-vue'
+  ForkSpoon,
+  UploadFilled
+} from '@element-plus/icons-vue';
 
-const router = useRouter()
+const router = useRouter();
 
 const routeMap = new Map([
   ['1', 'DashboardView'],
   ['2', 'UsersView'],
   ['3', 'IngredientView'],
   ['6', 'RecipeView'],
-  ['5', 'CalendarView']
-])
+  ['5', 'CalendarView'],
+  ['7', 'CsvImportView']
+]);
 
 const menuClick = (key: string) => {
-  router.push({ name: routeMap.get(key) })
-}
+  router.push({ name: routeMap.get(key) });
+};
 </script>
 
 <template>
@@ -48,13 +50,16 @@ const menuClick = (key: string) => {
       <el-icon :size="50"><Apple /></el-icon>
       <template #title>材料</template>
     </el-menu-item>
+    <el-menu-item index="7">
+      <el-icon :size="50"><UploadFilled /></el-icon>
+      <template #title>一括登録</template>
+    </el-menu-item>
     <!-- <el-menu-item index="2">
       <el-icon :size="50"><user /></el-icon>
       <template #title>User</template>
     </el-menu-item> -->
   </el-menu>
 </template>
-
 <style>
 .el-menu {
   border-right: none;

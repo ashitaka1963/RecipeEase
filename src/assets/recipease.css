@@ -1,3 +1,29 @@
+.container {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  /* background-color: #30343d; */
+  padding: 20px 40px;
+}
+
+/* text */
+.text-primary {
+  /* color: #ff6a00 !important; */
+}
+
+.large-text {
+  font-size: 32px !important;
+}
+
+.title {
+  font-size: 32px !important;
+  margin-bottom: 20px !important;
+}
+
+.sub-title {
+  font-size: 24px !important;
+  margin-bottom: 10px !important;
+}
+
 /* icon button */
 
 .main-icon-button {

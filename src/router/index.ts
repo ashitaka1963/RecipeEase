@@ -1,7 +1,9 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import IngredientView from '../views/IngredientView.vue'
-import RecipeView from '../views/RecipeView.vue'
-import CalendarView from '../views/CalendarView.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import IngredientView from '../views/IngredientView.vue';
+import RecipeView from '../views/RecipeView.vue';
+import RecipeDetailView from '../views/RecipeDetailView.vue';
+import CalendarView from '../views/CalendarView.vue';
+import CsvImportView from '../views/CsvImportView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,11 +24,26 @@ const router = createRouter({
       component: RecipeView
     },
     {
+      path: '/recipeDetailView/:id',
+      name: 'RecipeDetailView',
+      component: RecipeDetailView,
+      props: (routes) => {
+        return {
+          id: routes.params.id
+        };
+      }
+    },
+    {
       path: '/calendarView',
       name: 'CalendarView',
       component: CalendarView
+    },
+    {
+      path: '/csvImportView',
+      name: 'CsvImportView',
+      component: CsvImportView
     }
   ]
-})
+});
 
-export default router
+export default router;
