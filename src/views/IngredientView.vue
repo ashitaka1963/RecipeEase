@@ -57,27 +57,33 @@ const rules = reactive<FormRules<Ingredient>>({
 const categoryOptions = [
   {
     value: '野菜',
-    label: '野菜'
+    label: '野菜',
+    type: 'success'
   },
   {
     value: '肉',
-    label: '肉'
+    label: '肉',
+    type: 'danger'
   },
   {
     value: '魚',
-    label: '魚'
+    label: '魚',
+    type: ''
   },
   {
     value: '卵・乳製品',
-    label: '卵・乳製品'
+    label: '卵・乳製品',
+    type: 'yellow'
   },
   {
     value: '果物',
-    label: '果物'
+    label: '果物',
+    type: 'warning'
   },
   {
     value: '調味料',
-    label: '調味料'
+    label: '調味料',
+    type: 'info'
   }
 ];
 
@@ -172,6 +178,11 @@ function onCancelButtonClick() {
   deleteIngredientName.value = '';
   deleteIngredientId.value = '';
 }
+
+function selectedType(name: string) {
+  const category = categoryOptions.find((categories: any) => categories.label === name);
+  return category ? category.type : '';
+}
 </script>
 
 <template>
@@ -184,7 +195,7 @@ function onCancelButtonClick() {
             <el-table-column prop="name" label="名前" />
             <el-table-column prop="category" label="カテゴリ">
               <template #default="scope">
-                <el-tag class="ml-2" type="info">{{ scope.row.category }}</el-tag>
+                <el-tag :type="selectedType(scope.row.category)">{{ scope.row.category }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="unit" label="単位" />
@@ -269,3 +280,14 @@ function onCancelButtonClick() {
     />
   </main>
 </template>
+
+<style scoped>
+.el-tag.el-tag--yellow {
+  --el-tag-text-color: #e6db3c;
+}
+.el-tag.el-tag--yellow {
+  --el-tag-bg-color: #fdfbec;
+  --el-tag-border-color: #faf9d8;
+  --el-tag-hover-color: #e6db3c;
+}
+</style>
