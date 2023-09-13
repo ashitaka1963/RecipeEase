@@ -27,45 +27,79 @@ const isEdit = ref(true);
 const typeOptions = [
   {
     value: '主菜',
-    label: '主菜'
+    label: '主菜',
+    type: 'danger'
   },
   {
     value: '副菜',
-    label: '副菜'
+    label: '副菜',
+    type: 'success'
   },
   {
     value: '汁物',
-    label: '汁物'
+    label: '汁物',
+    type: 'warning'
   }
 ];
 
 const genreOptions = [
   {
-    value: 'パスタ',
-    label: 'パスタ'
+    value: '野菜のおかず',
+    label: '野菜のおかず'
   },
   {
-    value: 'xx',
-    label: 'xx'
+    value: '肉のおかず',
+    label: '肉のおかず'
   },
   {
-    value: 'yy',
-    label: 'yy'
+    value: '魚介のおかず',
+    label: '魚介のおかず'
+  },
+  {
+    value: 'ごはんもの',
+    label: 'ごはんもの'
+  },
+  {
+    value: 'パスタ・グラタン',
+    label: 'パスタ・グラタン'
+  },
+  {
+    value: '麺',
+    label: '麺'
+  },
+  {
+    value: 'シチュー・スープ・汁物',
+    label: 'シチュー・スープ・汁物'
+  },
+  {
+    value: 'サラダ',
+    label: 'サラダ'
+  },
+  {
+    value: '鍋もの',
+    label: '鍋もの'
+  },
+  {
+    value: 'お菓子',
+    label: 'お菓子'
   }
 ];
 
 const levelOptions = [
   {
     value: '低',
-    label: '低'
+    label: '低',
+    type: ''
   },
   {
     value: '中',
-    label: '中'
+    label: '中',
+    type: 'warning'
   },
   {
     value: '高',
-    label: '高'
+    label: '高',
+    type: 'danger'
   }
 ];
 
@@ -217,10 +251,10 @@ function onCancelButtonClick() {
   deleteRecipeId.value = '';
 }
 
-// //TODO:削除
-// import recipeList from '../temp/recipe-list.json';
-// const tempDate = recipeList;
-// const recipe = ref(tempDate);
+function selectedType(options: any, name: string) {
+  const category = options.find((categories: any) => categories.label === name);
+  return category ? category.type : '';
+}
 </script>
 
 <template>
@@ -233,17 +267,21 @@ function onCancelButtonClick() {
             <el-table-column prop="name" label="レシピ名" />
             <el-table-column prop="type" label="タイプ">
               <template #default="scope">
-                <el-tag class="ml-2" type="info">{{ scope.row.type }}</el-tag>
+                <el-tag :type="selectedType(typeOptions, scope.row.type)">{{
+                  scope.row.type
+                }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="genre" label="ジャンル">
-              <template #default="scope">
+              <!-- <template #default="scope">
                 <el-tag class="ml-2" type="info">{{ scope.row.genre }}</el-tag>
-              </template>
+              </template> -->
             </el-table-column>
             <el-table-column prop="level" label="難易度">
               <template #default="scope">
-                <el-tag class="ml-2" type="info">{{ scope.row.level }}</el-tag>
+                <el-tag :type="selectedType(levelOptions, scope.row.level)">{{
+                  scope.row.level
+                }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column width="160">
