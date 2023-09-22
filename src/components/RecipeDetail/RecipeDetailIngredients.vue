@@ -206,7 +206,7 @@ async function saveIngredients() {
         </template>
         <template v-else>
           <el-space>
-            <el-input-number v-model="ingredient.quantity" :min="1" :step="0.5" />
+            <el-input-number v-model="ingredient.quantity" :min="0" :step="0.5" />
             <el-text tag="span"> {{ ingredient.unit }}</el-text>
           </el-space>
         </template>

@@ -172,7 +172,7 @@ const dialogButtonName = computed((): any => {
 // ========================================
 // Methods
 // ========================================
-function goToAccountView(recipeId: string) {
+function goToRecipeDetailView(recipeId: string) {
   router.push({ name: 'RecipeDetailView', params: { id: recipeId } });
 }
 
@@ -299,7 +299,7 @@ function selectedType(options: any, name: string) {
               <template #default="scope">
                 <el-button
                   class="normal-icon-button"
-                  @click="goToAccountView(scope.row._id)"
+                  @click="goToRecipeDetailView(scope.row._id)"
                   :icon="Search"
                   circle
                 ></el-button>

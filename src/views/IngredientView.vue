@@ -76,6 +76,11 @@ const categoryOptions = [
     type: 'yellow'
   },
   {
+    value: '穀物',
+    label: '穀物',
+    type: 'yellow'
+  },
+  {
     value: '果物',
     label: '果物',
     type: 'warning'

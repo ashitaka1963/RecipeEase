@@ -1,71 +1,193 @@
 <script setup lang="ts">
-import dayjs from 'dayjs';
-import PageHeader from '../components/parts/PageHeader.vue';
-import { Search, Sunny, Moon } from '@element-plus/icons-vue';
-import { ref, reactive } from 'vue';
+// TODO:保存して閉じるは編集モードではないときだけクリックできるようにする。
 
-import recipeList from '../temp/recipe-list.json';
+import dayjs from 'dayjs';
+import { useRouter } from 'vue-router';
+
+import { Check, Sunny, Moon, Edit, Close } from '@element-plus/icons-vue';
+import { ref, reactive, computed } from 'vue';
+
+import { useRecipesStore } from '@/stores/recipes';
+import { useMenusStore } from '@/stores/menus';
+import { usePurchasesStore } from '@/stores/purchases';
+
+import PageHeader from '../components/parts/PageHeader.vue';
+import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
+import loadingUtils from '../CustomLoading';
+
+const router = useRouter();
+const recipesStore = useRecipesStore();
+const menusStore = useMenusStore();
+const purchasesStore = usePurchasesStore();
 
 const isMenuListDialogVisible = ref(false);
 const isAddMenuDialogVisible = ref(false);
 const value = ref(new Date());
-const tempDate = recipeList;
 
 const form = reactive<any>({
   _id: null,
   menuDate: dayjs().format('YYYY/MM/DD')
 });
 
-let calendarDataArray = [];
-
-const calendarData = ref(calendarDataArray);
-
 const selectedMenu = reactive<any>({
   _id: null,
+  mealTime: '',
   main: {},
   sub: {},
   soup: {}
 });
 
-addSchedule(new Date());
+const newMainRecipe = ref({ main: {}, sub: {}, soup: {} });
+const isMainEdit = ref({ main: false, sub: false, soup: false });
+
+init();
+
+// ========================================
+// Computed
+// ========================================
+
+const menus = computed((): any => {
+  const menus = menusStore.menus;
+
+  for (let menu of menus) {
+    const targetDate = dayjs(menu.date);
+
+    menu['years'] = targetDate.year();
+    menu['months'] = targetDate.format('MM');
+    menu['days'] = targetDate.format('DD');
+
+    menu['lunchMainDishName'] = menu.lunchMenu[0].name;
+    menu['dinnerMainDishName'] = menu.dinnerMenu[0].name;
+  }
+
+  return menus;
+});
+
+const recipeOptions = computed((): any => {
+  const categorizedData = {};
+
+  recipesStore.recipes.forEach((item: any) => {
+    const genre = item.genre;
+    if (!categorizedData[genre]) {
+      categorizedData[genre] = [];
+    }
+    categorizedData[genre].push({
+      id: item._id,
+      value: item.name,
+      label: item.name,
+      genre: item.category
+    });
+  });
+
+  const categorizedArray = Object.keys(categorizedData).map((genre) => ({
+    label: genre,
+    options: categorizedData[genre]
+  }));
+
+  return categorizedArray;
+});
 
 // ========================================
 // Methods
 // ========================================
-function addSchedule(date: any) {
+async function init() {
+  loadingUtils.startLoading();
+
+  await getRecipes();
+  await getMenus();
+
+  loadingUtils.closeLoading();
+}
+
+async function getRecipes() {
+  recipesStore.fetchRecipes();
+}
+
+async function getMenus() {
+  await menusStore.fetchMenus();
+}
+
+async function addMenu(date: any) {
+  loadingUtils.startLoading();
   const targetDate = dayjs(date);
 
-  const year = targetDate.year();
-  const month = targetDate.format('MM');
-  const day = targetDate.format('DD');
+  // const year = targetDate.year();
+  // const month = targetDate.format('MM');
+  // const day = targetDate.format('DD');
 
   const [lunchMenu, dinnerMenu] = selectRandomRecipe();
 
-  pushRecipeToSchedule(year, month, day, 'lunch', lunchMenu);
-  pushRecipeToSchedule(year, month, day, 'dinner', dinnerMenu);
+  await menusStore.addMenu({ date: targetDate, lunchMenu: lunchMenu, dinnerMenu: dinnerMenu });
+
+  await addPurchases(targetDate, 'lunch', lunchMenu);
+  await addPurchases(targetDate, 'dinner', dinnerMenu);
 
   isAddMenuDialogVisible.value = false;
+  loadingUtils.closeLoading();
 }
 
-function pushRecipeToSchedule(year: number, month: string, day: string, mealTime: string, menu) {
-  // for (const recipe of menu) {
-  //   calendarData.value.push({
-  //     years: year,
-  //     months: [month],
-  //     days: [day],
-  //     recipe: recipe.name,
-  //     mealTime: mealTime
-  //   });
-  // }
+async function addPurchases(menuDate: any, mealTime: string, menu: any) {
+  const purchases: any = [];
 
-  calendarData.value.push({
-    years: year,
-    months: [month],
-    days: [day],
-    recipe: menu[0].name,
-    mealTime: mealTime,
-    menu: menu
+  console.log(menu);
+
+  menu.forEach((recipe: any) => {
+    recipe.ingredients.forEach((ingredient: any) => {
+      purchases.push({
+        name: ingredient.name,
+        category: ingredient.category,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
+        isPurchased: false
+      });
+    });
   });
+
+  await purchasesStore.addPurchase({
+    date: menuDate,
+    mealTime: mealTime,
+    purchases: purchases
+  });
+}
+
+async function updateMenu() {
+  loadingUtils.startLoading();
+
+  console.log(selectedMenu);
+
+  await menusStore.editMenu({
+    _id: selectedMenu._id,
+    [selectedMenu.mealTime]: [selectedMenu.main, selectedMenu.sub, selectedMenu.soup]
+  });
+
+  isMenuListDialogVisible.value = false;
+  loadingUtils.closeLoading();
+}
+
+function getRecipeOption(targetType: string) {
+  const categorizedData = {};
+
+  recipesStore.recipes.forEach((item: any) => {
+    if (item.type !== targetType) return;
+
+    const genre = item.genre;
+    if (!categorizedData[genre]) {
+      categorizedData[genre] = [];
+    }
+    categorizedData[genre].push({
+      id: item._id,
+      value: item.name,
+      label: item.name,
+      genre: item.category
+    });
+  });
+
+  const categorizedArray = Object.keys(categorizedData).map((genre) => ({
+    label: genre,
+    options: categorizedData[genre]
+  }));
+
+  return categorizedArray;
 }
 
 function selectRandomRecipe() {
@@ -76,21 +198,32 @@ function selectRandomRecipe() {
 }
 
 function selectRecipe(mealTime: string) {
-  const isNotLevelHigh = mealTime === 'lunch' ? true : false;
+  // TODO:条件追加（おやすみ、頻度など）
+  // const isNotLevelHigh = mealTime === 'lunch' ? true : false;
+  const isNotLevelHigh = false;
 
-  const filterdMainRecipes = filterRecipe(tempDate, '主菜', isNotLevelHigh);
+  // 主菜
+  const filterdMainRecipes = filterRecipe(recipesStore.recipes, '主菜', isNotLevelHigh);
   let randomIndex = Math.floor(Math.random() * filterdMainRecipes.length);
+  console.log(filterdMainRecipes.length);
+  console.log(randomIndex);
   const selectedMainDish = filterdMainRecipes[randomIndex];
 
-  const filterdSideRecipes = filterRecipe(tempDate, '副菜');
+  // 副菜
+  const filterdSideRecipes = filterRecipe(recipesStore.recipes, '副菜');
   randomIndex = Math.floor(Math.random() * filterdSideRecipes.length);
   const selectedSideDish = filterdSideRecipes[randomIndex];
 
-  const filterdSoupRecipes = filterRecipe(tempDate, '汁物');
+  // 汁物
+  const filterdSoupRecipes = filterRecipe(recipesStore.recipes, '汁物');
   randomIndex = Math.floor(Math.random() * filterdSoupRecipes.length);
   const selectedSoup = filterdSoupRecipes[randomIndex];
 
-  return [selectedMainDish, selectedSideDish, selectedSoup];
+  if (selectedSoup === void 0) {
+    return [selectedMainDish, selectedSideDish];
+  } else {
+    return [selectedMainDish, selectedSideDish, selectedSoup];
+  }
 }
 
 function filterRecipe(recipeList: any, filterType: string, isNotLevelHigh: boolean = false) {
@@ -107,27 +240,44 @@ function findRecipe(menu: any, filterType: string, isNotLevelHigh: boolean = fal
   return menu.find((recipe: any) => {
     if (isNotLevelHigh) {
       return recipe.type == filterType && recipe.level != '高';
+    } else if (recipe == void 0) {
+      return recipe;
     } else {
       return recipe.type == filterType;
     }
   });
 }
 
-function dialogOpen(menu: any) {
+function dialogOpen(menuId: string, mealTime: string, menu: any) {
   isMenuListDialogVisible.value = true;
-  console.log(menu);
 
   const mainDish = findRecipe(menu, '主菜');
   const sideDish = findRecipe(menu, '副菜');
   const soup = findRecipe(menu, '汁物');
 
   const tmpObj = {
+    _id: menuId,
+    mealTime: mealTime,
     main: mainDish,
     sub: sideDish,
     soup: soup
   };
 
   Object.assign(selectedMenu, tmpObj);
+}
+
+function updateSelectedMenu(targetType: string) {
+  if (newMainRecipe.value[targetType].id == undefined) return;
+  const recipeId = newMainRecipe.value[targetType].id;
+  const recipe = recipesStore.getById(recipeId);
+
+  selectedMenu[targetType] = recipe;
+
+  isMainEdit.value[targetType] = false;
+}
+
+function goToRecipeDetailView(recipeId: string) {
+  router.push({ name: 'RecipeDetailView', params: { id: recipeId } });
 }
 </script>
 
@@ -138,7 +288,7 @@ function dialogOpen(menu: any) {
     <div class="container">
       <el-row>
         <el-col :span="24">
-          <el-button color="#ff8e3c" @click="isAddMenuDialogVisible = true"
+          <el-button class="main-button" color="#ff8e3c" @click="isAddMenuDialogVisible = true"
             >予定を追加</el-button
           ></el-col
         >
@@ -149,18 +299,20 @@ function dialogOpen(menu: any) {
             <template #date-cell="{ data }">
               {{ data.day.split('-').slice(2).join('-') }}
 
-              <div v-for="(item, key) in calendarData" :key="key">
+              <div v-for="(item, key) in menus" :key="key">
                 <div v-if="item.months.indexOf(data.day.split('-').slice(1)[0]) != -1">
                   <div v-if="item.days.indexOf(data.day.split('-').slice(2).join('-')) != -1">
                     <div>
-                      <template v-if="item.mealTime == 'lunch'"
-                        ><el-icon color="#F7A410" :size="14"><Sunny /></el-icon
-                      ></template>
-                      <template v-else
-                        ><el-icon color="#11068B" :size="14"><Moon /></el-icon
-                      ></template>
-
-                      <el-link @click="dialogOpen(item.menu)">{{ item.recipe }}</el-link>
+                      <el-link @click="dialogOpen(item._id, 'lunchMenu', item.lunchMenu)">
+                        <el-icon color="#F7A410" :size="14"><Sunny /></el-icon
+                        >{{ item.lunchMainDishName }}</el-link
+                      >
+                    </div>
+                    <div>
+                      <el-link @click="dialogOpen(item._id, 'dinnerMenu', item.dinnerMenu)">
+                        <el-icon color="#11068B" :size="14"><Moon /></el-icon
+                        >{{ item.dinnerMainDishName }}</el-link
+                      >
                     </div>
                   </div>
                 </div>
@@ -185,25 +337,194 @@ function dialogOpen(menu: any) {
         </el-form-item>
 
         <el-form-item>
-          <el-button color="#ff8e3c" @click="addSchedule(form.menuDate)">登録</el-button>
+          <el-button class="main-button" color="#ff8e3c" @click="addMenu(form.menuDate)"
+            >登録</el-button
+          >
           <!-- <el-button type="info" @click="cancelForm">Cancel</el-button> -->
         </el-form-item>
       </el-form>
     </el-dialog>
     <!-- メニュー一覧 -->
-    <el-dialog v-model="isMenuListDialogVisible" title="献立" width="30%" align-center>
+    <el-dialog v-model="isMenuListDialogVisible" title="献立" width="35%" align-center>
       <div class="container">
         <el-row>
-          <el-col :span="8"> 主菜 </el-col>
-          <el-col :span="16">{{ selectedMenu.main.name }}</el-col>
+          <el-col :span="6"> 主菜 </el-col>
+
+          <template v-if="!isMainEdit.main">
+            <el-col :span="14">
+              <el-link @click="goToRecipeDetailView(selectedMenu.main._id)">
+                {{ selectedMenu.main.name }}
+              </el-link>
+            </el-col>
+            <el-col :span="4">
+              <el-button
+                class="main-icon-button"
+                @click="isMainEdit.main = true"
+                :icon="Edit"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+          </template>
+
+          <template v-else>
+            <el-col :span="13">
+              <el-select v-model="newMainRecipe.main" value-key="id" placeholder="Select">
+                <el-option-group
+                  v-for="group in getRecipeOption('主菜')"
+                  :key="group.label"
+                  :label="group.label"
+                >
+                  <el-option
+                    v-for="item in group.options"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item"
+                  />
+                </el-option-group>
+              </el-select>
+            </el-col>
+            <el-col :span="2" style="margin-left: 5px">
+              <el-button
+                class="main-icon-button"
+                @click="updateSelectedMenu('main')"
+                :icon="Check"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+            <el-col :span="2" style="margin-left: 3px">
+              <el-button
+                @click="isMainEdit.main = false"
+                :icon="Close"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+          </template>
         </el-row>
         <el-row>
-          <el-col :span="8"> 副菜 </el-col>
-          <el-col :span="16">{{ selectedMenu.sub.name }}</el-col>
+          <el-col :span="6"> 副菜 </el-col>
+
+          <template v-if="!isMainEdit.sub">
+            <el-col :span="14">
+              <el-link @click="goToRecipeDetailView(selectedMenu.sub._id)">
+                {{ selectedMenu.sub.name }}
+              </el-link>
+            </el-col>
+            <el-col :span="4">
+              <el-button
+                class="main-icon-button"
+                @click="isMainEdit.sub = true"
+                :icon="Edit"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+          </template>
+
+          <template v-else>
+            <el-col :span="13">
+              <el-select v-model="newMainRecipe.sub" value-key="id" placeholder="Select">
+                <el-option-group
+                  v-for="group in getRecipeOption('副菜')"
+                  :key="group.label"
+                  :label="group.label"
+                >
+                  <el-option
+                    v-for="item in group.options"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item"
+                  />
+                </el-option-group>
+              </el-select>
+            </el-col>
+            <el-col :span="2" style="margin-left: 5px">
+              <el-button
+                class="main-icon-button"
+                @click="updateSelectedMenu('sub')"
+                :icon="Check"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+            <el-col :span="2" style="margin-left: 3px">
+              <el-button
+                @click="isMainEdit.sub = false"
+                :icon="Close"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+          </template>
         </el-row>
         <el-row v-if="selectedMenu.soup">
-          <el-col :span="8"> 汁物 </el-col>
-          <el-col :span="16">{{ selectedMenu.soup.name }}</el-col>
+          <el-col :span="6"> 汁物 </el-col>
+
+          <template v-if="!isMainEdit.soup">
+            <el-col :span="14">
+              <el-link @click="goToRecipeDetailView(selectedMenu.soup._id)">
+                {{ selectedMenu.soup.name }}
+              </el-link>
+            </el-col>
+            <el-col :span="4">
+              <el-button
+                class="main-icon-button"
+                @click="isMainEdit.soup = true"
+                :icon="Edit"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+          </template>
+
+          <template v-else>
+            <el-col :span="13">
+              <el-select v-model="newMainRecipe.soup" value-key="id" placeholder="Select">
+                <el-option-group
+                  v-for="group in getRecipeOption('汁物')"
+                  :key="group.label"
+                  :label="group.label"
+                >
+                  <el-option
+                    v-for="item in group.options"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item"
+                  />
+                </el-option-group>
+              </el-select>
+            </el-col>
+            <el-col :span="2" style="margin-left: 5px">
+              <el-button
+                class="main-icon-button"
+                @click="updateSelectedMenu('soup')"
+                :icon="Check"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+            <el-col :span="2" style="margin-left: 3px">
+              <el-button
+                @click="isMainEdit.soup = false"
+                :icon="Close"
+                size="small"
+                circle
+              ></el-button>
+            </el-col>
+          </template>
+        </el-row>
+
+        <el-row style="margin-top: 30px" justify="center">
+          <el-col :span="16">
+            <el-button class="main-button" color="#ff8e3c" @click="updateMenu"
+              >保存して閉じる</el-button
+            >
+          </el-col>
+          <el-col :span="8">
+            <el-button type="info" @click="isMenuListDialogVisible = false">中止</el-button>
+          </el-col>
         </el-row>
       </div></el-dialog
     >
