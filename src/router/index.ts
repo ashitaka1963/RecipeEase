@@ -4,6 +4,7 @@ import RecipeView from '../views/RecipeView.vue';
 import RecipeDetailView from '../views/RecipeDetailView.vue';
 import CalendarView from '../views/CalendarView.vue';
 import CsvImportView from '../views/CsvImportView.vue';
+import PurchaseView from '../views/PurchaseView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -42,6 +43,11 @@ const router = createRouter({
       path: '/csvImportView',
       name: 'CsvImportView',
       component: CsvImportView
+    },
+    {
+      path: '/purchaseView',
+      name: 'PurchaseView',
+      component: PurchaseView
     }
   ]
 });
