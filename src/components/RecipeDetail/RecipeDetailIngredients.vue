@@ -35,9 +35,9 @@ const recipe = computed((): any => {
 });
 
 const ingredientOptions = computed((): any => {
-  const categorizedData = {};
+  const categorizedData: any = {};
 
-  ingredientsStore.ingredients.forEach((item) => {
+  ingredientsStore.ingredients.forEach((item: any) => {
     const category = item.category;
     if (!categorizedData[category]) {
       categorizedData[category] = [];
@@ -93,11 +93,11 @@ function addRow() {
   });
 }
 
-function deleteRow(key) {
+function deleteRow(key: number) {
   ingredientsForm.splice(key, 1);
 }
 
-function changeIngredient(selectedIngredient) {
+function changeIngredient(selectedIngredient: any) {
   selectedIngredient.name = selectedIngredient.value.label;
   selectedIngredient.unit = selectedIngredient.value.unit;
   selectedIngredient.category = selectedIngredient.value.category;

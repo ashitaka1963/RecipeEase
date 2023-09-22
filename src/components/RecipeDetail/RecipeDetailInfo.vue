@@ -15,7 +15,8 @@ const url = 'https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.
 // ========================================
 // Computed
 // ========================================
-const tagType = {
+
+const tagType: any = {
   主菜: '',
   副菜: 'success',
   汁物: 'warning'
@@ -26,8 +27,6 @@ const recipe = computed((): any => {
 });
 
 const recipeType = computed((): any => {
-  console.log(recipe.value.type);
-  console.log(tagType[recipe.value.type]);
   return tagType[recipe.value.type];
 });
 </script>
@@ -38,7 +37,7 @@ const recipeType = computed((): any => {
     <el-row>
       <el-col :span="12">
         <div>
-          <el-image style="width: 300px; height: 300px" :src="url" :fit="fill">
+          <el-image style="width: 300px; height: 300px" :src="url" fit="fill">
             <template #error>
               <div class="image-slot">
                 <el-icon><icon-picture /></el-icon>
@@ -68,7 +67,7 @@ const recipeType = computed((): any => {
         </el-row>
         <el-row>
           <el-col :span="24">
-            <el-rate v-model="value" size="large" />
+            <el-rate size="large" />
           </el-col>
         </el-row>
         <el-row>

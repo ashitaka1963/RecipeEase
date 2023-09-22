@@ -37,8 +37,8 @@ const selectedMenu = reactive<any>({
   soup: {}
 });
 
-const newMainRecipe = ref({ main: {}, sub: {}, soup: {} });
-const isMainEdit = ref({ main: false, sub: false, soup: false });
+const newMainRecipe: any = ref({ main: {}, sub: {}, soup: {} });
+const isMainEdit: any = ref({ main: false, sub: false, soup: false });
 
 init();
 
@@ -64,7 +64,7 @@ const menus = computed((): any => {
 });
 
 const recipeOptions = computed((): any => {
-  const categorizedData = {};
+  const categorizedData: any = {};
 
   recipesStore.recipes.forEach((item: any) => {
     const genre = item.genre;
@@ -165,7 +165,7 @@ async function updateMenu() {
 }
 
 function getRecipeOption(targetType: string) {
-  const categorizedData = {};
+  const categorizedData: any = {};
 
   recipesStore.recipes.forEach((item: any) => {
     if (item.type !== targetType) return;

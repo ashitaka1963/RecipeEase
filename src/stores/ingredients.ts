@@ -21,7 +21,7 @@ export const useIngredientsStore = defineStore('ingredients', {
         .get('/ingredients')
         .then((response: any) => {
           this.ingredients = response.data;
-          this.ingredients.sort((a, b) => {
+          this.ingredients.sort((a: any, b: any) => {
             if (a.category && b.category) {
               const categoryComparison = a.category.localeCompare(b.category);
               if (categoryComparison === 0) {

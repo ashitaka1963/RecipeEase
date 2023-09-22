@@ -34,6 +34,8 @@ function fileChange(e: any) {
   const readsData: any[] = [];
 
   const loadFunc = () => {
+    if (reader.result == null) return;
+    if (reader.result instanceof ArrayBuffer) return;
     const lines = reader.result.replace(/\r/g, '').split('\n');
     lines.forEach((line: any) => {
       const read = line.split(',');

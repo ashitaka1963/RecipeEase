@@ -5,6 +5,7 @@ import { ref, computed } from 'vue';
 import { usePurchasesStore } from '@/stores/purchases';
 
 import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 
 import PageHeader from '../components/parts/PageHeader.vue';
 import ConfirmDialog from '../components/parts/ConfirmDialog.vue';
@@ -58,9 +59,9 @@ const categoryOptions = [
 ];
 
 const target = ref('nextWeek');
-const purchased = ref(null);
-const startDate = ref('');
-const endDate = ref('');
+const purchased = ref<any>(null);
+const startDate = ref<any>(null);
+const endDate = ref<any>(null);
 
 const targetOptions = [
   {
@@ -90,10 +91,10 @@ const selectedIntervalLabel = computed((): any => {
 
 const purchaseItems = computed((): any => {
   // "purchases" プロパティだけを結合した新しい配列と情報を持つ配列を作成
-  const combinedPurchasesWithInfo = [];
+  const combinedPurchasesWithInfo: any = [];
 
-  purchasesStore.purchases.forEach((item, index) => {
-    const purchases = item.purchases.map((purchase, purchaseIndex) => ({
+  purchasesStore.purchases.forEach((item: any) => {
+    const purchases = item.purchases.map((purchase: any, purchaseIndex: number) => ({
       ...purchase,
       _id: item._id,
       purchaseIndex: purchaseIndex
@@ -101,7 +102,7 @@ const purchaseItems = computed((): any => {
     combinedPurchasesWithInfo.push(...purchases);
   });
 
-  combinedPurchasesWithInfo.sort((a, b) => {
+  combinedPurchasesWithInfo.sort((a: any, b: any) => {
     {
       let targetOption = categoryOptions.find((option) => option.value === a.category);
       const aSortOrder = targetOption?.sortOrder;
@@ -111,15 +112,15 @@ const purchaseItems = computed((): any => {
 
       if (aSortOrder === bSortOrder) {
         return a.name.localeCompare(b.name);
-      } else {
+      } else if (aSortOrder && bSortOrder) {
         return aSortOrder - bSortOrder;
       }
     }
   });
 
-  const filteredObjects = combinedPurchasesWithInfo.filter((obj) => obj.isPurchased === false);
+  const filteredObjects = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === false);
 
-  purchased.value = combinedPurchasesWithInfo.filter((obj) => obj.isPurchased === true);
+  purchased.value = combinedPurchasesWithInfo.filter((obj: any) => obj.isPurchased === true);
 
   return filteredObjects;
 });
